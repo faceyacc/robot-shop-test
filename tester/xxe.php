@@ -1,20 +1,15 @@
-const express = require('express')
-const libxmljs = require('libxml')
-const db = require('db');
-const router = express.Router()
+<?php
 
-router.post('/upload-products', (req, res) => {
-    const XMLfile = req.files.products.data;
-	const products = libxmljs.parseXmlString(XMLfile, {noent:true,noblanks:true})
+require_once('../_helpers/strip.php');
 
-	products.root().childNodes().forEach(product => {
-		let newProduct = new db.Product()
-		newProduct.name = product.childNodes()[0].text()
-		newProduct.description = product.childNodes()[3].text()
-		newProduct.save()
-    });
-    
-    res.send('Thanks')
-})
+// https://depthsecurity.com/blog/exploitation-xml-external-entity-xxe-injection
 
-module.exports = router
+libxml_disable_entity_loader (false);
+
+$xml = strlen($_GET['xml']) > 0 ? $_GET['xml'] : '<root><content>No XML found</content></root>';
+
+$document = new DOMDocument();
+$document->loadXML($xml, LIBXML_NOENT | LIBXML_DTDLOAD);
+$parsedDocument = simplexml_import_dom($document);
+
+echo $parsedDocument->content;
